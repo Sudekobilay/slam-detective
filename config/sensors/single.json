@@ -1,0 +1,15 @@
+{
+  "name": "single",
+  "gps_enabled": true,
+  "lidars": [
+    {
+      "id": "center",
+      "x_m": 0.0,
+      "y_m": 0.0,
+      "yaw_deg": 0.0,
+      "fov_deg": 360.0,
+      "beams": 181,
+      "max_range_m": 15.0
+    }
+  ]
+}

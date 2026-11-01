@@ -1,0 +1,1 @@
+"""SLAM-Detective sonuçlarının hareketli gösterimleri."""

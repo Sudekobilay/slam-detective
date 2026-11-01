@@ -1,0 +1,24 @@
+{
+  "name": "dual",
+  "gps_enabled": true,
+  "lidars": [
+    {
+      "id": "front",
+      "x_m": 0.25,
+      "y_m": 0.0,
+      "yaw_deg": 0.0,
+      "fov_deg": 180.0,
+      "beams": 91,
+      "max_range_m": 15.0
+    },
+    {
+      "id": "rear",
+      "x_m": -0.25,
+      "y_m": 0.0,
+      "yaw_deg": 180.0,
+      "fov_deg": 180.0,
+      "beams": 91,
+      "max_range_m": 15.0
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+"""Gerçek veri kayıtlarını okuyan adaptörler."""
