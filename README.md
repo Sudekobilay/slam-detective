@@ -2,110 +2,94 @@
 
 # SLAM-Detective
 
-### Çoklu sensörlü SLAM sistemlerinde hareket seçimiyle hata teşhisi
+**Hareket seçimiyle sensör hatası teşhisi**
 
-**Robot, anlamadığı bir sensör hatasını hareketini değiştirerek ayırt edebilir mi?**
+Çoklu LiDAR · Sensör füzyonu · Çizgi tabanlı SLAM · Aktif teşhis
 
-![Python](https://img.shields.io/badge/Python-3.13.3-3776AB?logo=python&logoColor=white)
+<img alt="Python 3.13.3" src="https://img.shields.io/badge/Python-3.13.3-3776AB?style=flat-square&amp;logo=python&amp;logoColor=white">
+<img alt="Özel 2B simülatör" src="https://img.shields.io/badge/Sim%C3%BClasyon-%C3%96zel_2B-0F766E?style=flat-square">
+<img alt="Araştırma prototipi" src="https://img.shields.io/badge/Durum-Ara%C5%9Ft%C4%B1rma_prototipi-64748B?style=flat-square">
 
-![Simulation](https://img.shields.io/badge/Simülasyon-Özel_2B-0F766E)
-
-![SLAM](https://img.shields.io/badge/SLAM-EKF_%7C_FastSLAM_1.0_%7C_2.0-6D28D9)
-
-![Status](https://img.shields.io/badge/Durum-Araştırma_prototipi-EAB308)
-
-[Başlangıç](#hızlı-başlangıç) · [Deney sonucu](#hareket-ne-zaman-fark-yarattı) · [Mimari](#sistem-mimarisi) · [Dokümantasyon](docs/README.md)
+[Genel bakış](#genel-bakış) · [Bulgular](#öne-çıkan-deney) · [Başlangıç](#hızlı-başlangıç) · [Dokümantasyon](docs/README.md)
 
 </div>
 
 <p align="center">
-  <img src="docs/assets/active_demo.gif" alt="Dört LiDAR, öğrenilen çizgi haritası, sensör tutarsızlığı ve seçilen teşhis hareketi" width="750">
+  <img src="docs/assets/active_demo.gif" alt="SLAM-Detective: dört LiDAR, öğrenilen harita, alarm ve seçilen hareket" width="720">
 </p>
-
-*EXP-40 kaydının yeniden gösterimi: dört LiDAR, EKF-SLAM, sol LiDAR montaj hatası ve GPS açık koşulu. Harita, ölçümler, alarm ve kayıtlı hareket seçimi birlikte gösterilir. Gerçek konum ve fiziksel ışınlar yalnız simülasyon üretimi/değerlendirme ve çizim içindir; karar mekanizmasına verilmez.*
-
-## Neyi araştırıyoruz?
-
-Bir robotun ölçümleri uyuşmadığında iki ayrı problem ortaya çıkar: **Bir hata var mı? Hata nereden geliyor?** Örneğin bir LiDAR'ın montaj açısındaki sapma ile robotun yön tahminindeki sapma bazı koşullarda benzer belirtiler oluşturabilir. Üstelik hatalı ölçümler haritaya işlendiğinde harita da hatayı öğrenebilir.
-
-SLAM-Detective; robotun kendi haritasını oluşturduğu, sensör tutarsızlığını izlediği ve tanımlı hata modellerini ayırmak için kısa bir **düz veya yay hareketi seçtiği** Python deney ortamıdır. Hazır robot simülatörü kullanılmaz.
-
-Projenin odağı yalnız konum hatasını azaltmak değil, **hareketin hata teşhisine katkısını ölçmektir.** Alarm üretimi, kaynak teşhisi ve hareket seçiminin faydası ayrı değerlendirilir.
-
-## Hareket ne zaman fark yarattı?
-
-**EXP-42 — Koridor, normal rota yay, ön LiDAR'da +5° montaj hatası.**
-
-Aynı başlangıç ve ölçüm geçmişinden gelen dört politika karşılaştırıldı. Alarm sonrasındaki iki saniyede doğru kaynağın doğrulanması için aynı model ve açı işaretinin iki ardışık destekli taramada aday olması istendi.
-
-| Politika | Doğru kaynak doğrulaması | Belirsiz | Alarm sonrası hareket |
-| --- | ---: | ---: | --- |
-| Pasif | 0/10 | 10/10 | Normal yay rotası |
-| Sabit yay | 0/10 | 10/10 | Yay |
-| Sabit düz | 10/10 | 0/10 | Düz |
-| **Adaptif** | **10/10** | **0/10** | **Düz hareketi seçti** |
-
-Bu koşulda hareket değişikliği, teşhis için gereken kanıtı sağladı. **Sabit düz de aynı başarıyı verdi:** sonuç adaptif yöntemin bütün sabit politikalardan üstün olduğunu göstermez.
 
 <p align="center">
-  <img src="docs/assets/heldout_diagnosis.png" alt="İki ek ortamda dört politikanın doğru kaynak doğrulama oranları" width="650">
+  <sub>EXP-40 · Dört LiDAR · EKF-SLAM · Sol LiDAR montaj hatası · GPS açık</sub>
 </p>
 
-*Bütün ortam/rota koşulları birlikte gösterilir. Diğer +5° hücrelerinde politikaların doğru kaynak sayıları eşitti. +2° hatalarda hiçbir politika alarm üretmedi; bu, küçük hata duyarlılığının sınırıdır.*
+Gösterim kayıtlı deneyi yeniden oynatır; alarm, harita koruması ve seçilen hareket birlikte izlenir. Gerçek konum ve fiziksel ışınlar üretim/değerlendirme ve çizim içindir; seçiciye verilmez.
 
-**Deney kapsamı:** 2 ek ortam × 2 normal rota × 3 hata büyüklüğü × 4 politika × 10 tohum = **480 politika çalıştırması**. Bunlar **120 eşleştirilmiş temel koşulun** dört politikasıdır; 480 bağımsız sensör kaydı değildir. Kalibrasyon yalnız önceki ortamın sağlıklı kayıtlarından yapılmış ve test öncesinde dondurulmuştur.
+---
 
-[Protokol ve başarı tanımı](docs/heldout_environments.md) · [Bulguların yorumu](docs/RESEARCH_FINDINGS.md)
+## Genel bakış
 
-## Neler uygulandı?
+> **Robot, anlamadığı bir sensör hatasını hareketini değiştirerek ayırt edebilir mi?**
 
-| Bileşen | Uygulanan çalışma |
-| --- | --- |
-| **Özel 2B simülatör** | Diferansiyel sürüş, duvar/engel geometrisi, çarpışma kontrolü, bağımsız gerçek konum |
-| **Çoklu LiDAR** | JSON üzerinden sayı, kimlik, montaj, görüş açısı, ışın sayısı ve menzil; 1/2/4 örnek düzen |
-| **Diğer sensörler** | Encoder kuantalaması, düzlemsel gyro gürültüsü/bias, GPS gürültüsü/kesintisi/sapması |
-| **Ham LiDAR işleme** | Noktalardan çizgi çıkarımı, veri eşleştirme, çizgi haritası oluşturma |
-| **SLAM çekirdekleri** | Çizgi EKF-SLAM ve çizgi temelli FastSLAM 1.0/2.0 uyarlamaları |
-| **Tutarlılık izleme** | Yenilik/NIS incelemesi, ham tarama hizalama izlemesi, şüphede LiDAR güncellemelerini askıya alma |
-| **Kaynak modelleri** | Destekli LiDAR'ların montaj yaw hataları ve ortak yön sapması |
-| **Hareket seçimi** | Tahmini haritada rakip modellerin beklenen ölçüm ayrımına göre düz/yay seçimi |
-| **GPS koruması** | GPS'siz referansla kontrol ve isteğe bağlı korumalı GPS füzyonu |
-| **Gerçek veri** | Freiburg 079 CARMEN LiDAR + kayıtlı odometri yeniden oynatımı |
-| **Analiz ve gösterim** | Eşleştirilmiş politika tabloları, grafikler ve kayıttan GIF üretimi |
+SLAM-Detective, robotun ham LiDAR verisinden harita oluşturduğu, sensör tutarsızlıklarını izlediği ve rakip hata modellerini ayırmak için kısa bir **düz veya yay hareketi seçtiği** Python araştırma ortamıdır.
 
-## Sistem mimarisi
+Bir tutarsızlığı yakalamak, kaynağını belirlemekle aynı şey değildir. LiDAR montaj hatası ve robotun yön tahminindeki hata bazı koşullarda benzer belirtiler oluşturabilir. Proje, robotun sonraki hareketinin bu ayrımı nasıl etkilediğini kontrollü deneylerle inceler.
 
-```mermaid
-flowchart TD
-    A["Encoder · Gyro · LiDAR · GPS"] --> B["Hareket tahmini ve SLAM"]
-    A --> C["Tutarlılık izleme"]
-    B --> D["Tahmini poz ve çizgi haritası"]
-    C --> E["Hata modellerini karşılaştırma"]
-    D --> E
-    E --> F["Düz / yay aday seçimi"]
-    D --> F
-    F --> G["Komut ve yeni ölçümler"]
-    G --> A
-```
+<table>
+  <tr>
+    <td align="center"><strong>3 SLAM çekirdeği</strong><br><sub>EKF · FastSLAM 1.0 / 2.0 uyarlamaları</sub></td>
+    <td align="center"><strong>1 / 2 / 4 LiDAR</strong><br><sub>Yapılandırılabilir sensör düzenleri</sub></td>
+    <td align="center"><strong>4 hareket politikası</strong><br><sub>Pasif · Sabit düz · Sabit yay · Adaptif</sub></td>
+  </tr>
+</table>
 
-Seçici gerçek hata etiketini, gerçek konumu veya kusursuz ortam haritasını almaz. Karar, robotun **mevcut tahmini ve oluşturduğu harita** üzerinden verilir. Geometrik aday puanı teşhis olasılığı veya formel bilgi kazancı değildir.
+## Öne çıkan deney
 
-| Klasör | Görevi |
-| --- | --- |
-| `simulator/` | Hareket, ortam ve sensör üretimi |
-| `perception/` | Çizgi çıkarımı ve veri eşleştirme |
-| `estimation/` | Kestirim, alarm, hata modelleri ve hareket seçimi |
-| `experiments/` | Kontrollü deneyler ve çevrimdışı değerlendirme |
-| `dataset_loaders/` | Gerçek kayıt okuma |
-| `analytics/` | Sonuç tabloları ve grafikler |
-| `visualization/` | Kayıttan hareketli gösterim |
-| `config/sensors/` | Sensör düzenleri |
+**Koridor ortamı · Normal rota: yay · Ön LiDAR montaj hatası: +5°**
 
-[Mimari açıklaması](docs/ARCHITECTURE.md) · [Algoritmalar](docs/ALGORITHMS.md) · [Teşhis ve karar](docs/ACTIVE_DIAGNOSIS.md)
+EXP-42'de politikalar aynı başlangıç ve alarm öncesi ölçüm geçmişiyle karşılaştırıldı. Birincil sonuç, alarmdan sonraki iki saniyede doğru hata kaynağının doğrulanmasıdır.
+
+| Politika | Doğru kaynak | Belirsiz | Davranış |
+| :--- | ---: | ---: | :--- |
+| Pasif | 0/10 | 10/10 | Yay rotasını sürdürdü |
+| Sabit yay | 0/10 | 10/10 | Yay uyguladı |
+| Sabit düz | 10/10 | 0/10 | Düz harekete geçti |
+| **Adaptif** | **10/10** | **0/10** | **Düz hareketi seçti** |
+
+**Yorum:** Bu koşulda hareket değişikliği teşhis için gereken kanıtı sağladı. Sabit düz de aynı sonucu verdi; adaptif yöntemin bütün sabit politikalardan üstün olduğu gösterilmedi.
+
+<details>
+<summary><strong>Tüm koşulları ve deney kapsamını göster</strong></summary>
+
+<p align="center">
+  <img src="docs/assets/heldout_diagnosis.png" alt="EXP-42: bütün koşullarda doğru kaynak doğrulaması" width="620">
+</p>
+
+- Diğer +5° ortam/rota hücrelerinde politikaların doğru kaynak sayıları eşitti.
+- +2° hatalarda hiçbir politika alarm üretmedi; küçük hata duyarlılığı sınırlıdır.
+- Başarı, aynı model ve açı işaretinin iki ardışık destekli taramada aday olmasıyla doğrulandı.
+- Kalibrasyon yalnız önceki ortamın sağlıklı kayıtlarından yapıldı ve test öncesinde donduruldu.
+
+**2 ortam × 2 normal rota × 3 hata × 4 politika × 10 tohum = 480 politika çalıştırması.** Bunlar 120 eşleştirilmiş temel koşulun dört politikasıdır; 480 bağımsız sensör kaydı değildir.
+
+</details>
+
+[Deney protokolü](docs/heldout_environments.md) · [Bulgular ve yorum](docs/RESEARCH_FINDINGS.md)
+
+## Yetenekler
+
+| Alan | Uygulanan çalışma |
+| :--- | :--- |
+| **Simülasyon** | Hazır simülatör kullanmadan diferansiyel sürüş, duvarlar, engeller ve çarpışma kontrolü |
+| **Sensörler** | Yapılandırılabilir LiDAR; encoder kuantalaması; düzlemsel gyro gürültüsü/bias; GPS gürültüsü, kesinti ve sapma |
+| **Algılama ve SLAM** | Ham noktalardan çizgi çıkarımı, veri eşleştirme, EKF-SLAM ve çizgi temelli FastSLAM uyarlamaları |
+| **Teşhis** | Yenilik/NIS incelemesi, ham tarama hizalama izlemesi, montaj/yön hata modelleri ve harita güncelleme koruması |
+| **Karar** | Mevcut tahmini haritada rakip modellerin beklenen ölçüm ayrımına göre düz/yay seçimi |
+| **GPS ve gerçek veri** | GPS'siz referansla korumalı füzyon; Freiburg 079 LiDAR/odometri yeniden oynatımı |
+| **Değerlendirme** | Eşleştirilmiş politika karşılaştırmaları, tablo/grafik üretimi ve kayıttan GIF |
 
 ## Hızlı başlangıç
 
-Komutları proje kökünde Windows PowerShell üzerinde çalıştırın. Mevcut `.venv` varsa yeniden oluşturmayın.
+Windows PowerShell üzerinde proje kökünde çalıştırın. Mevcut `.venv` varsa yeniden oluşturmayın.
 
 ```powershell
 py -3.13 -m venv .venv
@@ -113,28 +97,31 @@ py -3.13 -m venv .venv
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-Örnek sensör dosyaları henüz yoksa oluşturun:
+Örnek sensör dosyaları henüz yoksa:
 
 ```powershell
 .\.venv\Scripts\python.exe main.py layouts
 ```
 
-**Önce sağlıklı kontrol, ardından hatalı sensör:**
+**Sağlıklı kontrol ve sol LiDAR hatası:**
 
 ```powershell
 .\.venv\Scripts\python.exe main.py active --config config/sensors/quad.json --fault healthy --no-gps
 .\.venv\Scripts\python.exe main.py active --config config/sensors/quad.json --fault-sensor left --no-gps
 ```
 
-Varsayılan EKF/quad örneğinde sağlıklı koşulda alarm oluşmaz; sol LiDAR +5° örneğinde 2.5 s'de alarm ve yay seçimi doğrulanmıştır. Bu tekil bütünleştirme kontrolüdür, genel başarı oranı değildir.
+Varsayılan EKF/quad örneğinde sağlıklı koşulda alarm oluşmaz; sol LiDAR +5° örneğinde 2.5 s'de alarm ve yay seçimi doğrulanmıştır. Bu tekil bütünleştirme kontrolüdür; genel başarı oranı değildir.
 
-### Gösterim oluşturma
+<details>
+<summary><strong>Diğer çalıştırma komutları</strong></summary>
+
+### Kayıttan hareketli gösterim
 
 ```powershell
 .\.venv\Scripts\python.exe main.py active-demo --run "results\EXP40_KLASORU"
 ```
 
-`EXP40_KLASORU` yerine terminalde yazdırılan gerçek çıktı klasörünü kullanın. Gösterim kayıtlı deneyi yeniden oynatır; başka hareket altında yeni bir deney yapmaz.
+Yer tutucuyu terminalde yazdırılan gerçek klasör adıyla değiştirin. Bu komut başka bir hareket altında yeni deney yapmaz.
 
 ### Ek ortam değerlendirmesi
 
@@ -144,62 +131,114 @@ $env:OPENBLAS_NUM_THREADS = "1"
 .\.venv\Scripts\python.exe -m analytics.heldout_environment_results --run "results\EXP42_KLASORU"
 ```
 
-Tam protokol 480 çalıştırmadır. `--seeds 1201` kısa bağlantı kontrolü içindir; tam sonuç yerine geçmez. `--save-recordings` isteğe bağlı ham kayıt saklamayı açar.
+Tam protokol 480 çalıştırmadır. `--seeds 1201` yalnız kısa bağlantı kontrolüdür. `--save-recordings` isteğe bağlı ham kayıt saklamayı açar.
 
-## Deney ortamları
-
-<p align="center">
-  <img src="docs/assets/heldout_environments.png" alt="Ek ortamlar ve koridor örneğinde politika yörüngelerinin karşılaştırması" width="600">
-</p>
-
-*EXP-42: koridor ve asimetrik engelli oda. Çizilen yörüngeler seçilmiş bir tohumun örneğidir; başarı sayıları bütün 10 tohumdan gelir.*
-
-## Algoritma karşılaştırması
+### Algoritma karşılaştırması
 
 ```powershell
 .\.venv\Scripts\python.exe main.py compare
 ```
 
-<p align="center">
-  <img src="docs/assets/algorithms_rmse.png" alt="Aynı nominal kayıtlarda EKF ve FastSLAM uyarlamalarının konum RMSE karşılaştırması" width="650">
-</p>
-
-*EXP-38'in incelenen nominal koşullarında EKF daha düşük RMSE verdi. FastSLAM 2.0 her koşulda FastSLAM 1.0'dan iyi çıkmadı. Parçacıklı yöntemlerin tekrarları parçacık tohumlarıdır; bağımsız sensör kayıtları değildir. Bu grafik genel algoritma sıralaması değildir.*
-
-FastSLAM çekirdekleri çizgi özelliklerine uyarlamadır; özgün makalelerin birebir tekrarı veya ağaç tabanlı karmaşıklık avantajının doğrulaması değildir.
-
-## Gerçek veri desteği
+### Gerçek veri
 
 ```powershell
 .\.venv\Scripts\python.exe main.py real --download
 ```
 
-Freiburg 079 kaydındaki LiDAR ve odometri yeniden oynatılır. Varsayılan ilk 40 seçilmiş tarama yaklaşık 25.17 saniyeyi kapsar. **Bağımsız gerçek konum kullanılmadığından doğruluk RMSE/ATE'si hesaplanmaz; kayıtta yeni teşhis hareketi uygulanmış gibi sunulmaz.** Ham dosya `data/raw/` altında tutulur ve depoya eklenmez.
+Freiburg 079 LiDAR ve kayıtlı odometri kullanılır. Varsayılan ilk 40 seçilmiş tarama yaklaşık 25.17 saniyedir. Ham kayıt `data/raw/` altında tutulur ve depoya eklenmez. Bağımsız gerçek konum olmadığı için doğruluk RMSE/ATE'si hesaplanmaz; gerçek kayıtta yeni teşhis hareketi uygulanmaz.
 
-[Kaynak, veri biçimi ve kullanım notları](docs/real_data.md)
+[Veri kaynağı ve kullanım notları](docs/real_data.md)
 
-## Doğrulama ve kapsam
+</details>
 
-Gönderilen güncel proje kopyasında **319 test geçti**. Bu statik doğrulama kaydıdır; canlı CI rozeti değildir. EXP-42 kaydında 480 çalışma ve gerekli süreler tamamlandı; eski çekirdekler ile dondurulmuş kalibrasyon korunmuştu.
+## Mimari
 
-- Mevcut kaynak ayrımı en az iki destekli LiDAR ister; tek LiDAR haritalama yapabilir.
+Kararlar yalnız ölçümler, mevcut tahmin ve öğrenilen haritayla alınır. Gerçek hata etiketi, gerçek konum ve kusursuz ortam haritası karar mekanizmasına verilmez.
 
-- Yalnız GPS hatası için teşhis hareketi seçen öteleme modeli uygulanmamıştır.
+<details>
+<summary><strong>İşlem akışını ve modül sorumluluklarını göster</strong></summary>
 
-- İncelenen dört-LiDAR/FastSLAM +5° örneğinde alarm oluşmamıştır.
+```mermaid
+flowchart TD
+    A["Encoder · Gyro · LiDAR · GPS"] --> B["Hareket tahmini ve SLAM"]
+    A --> C["Tutarlılık izleme"]
+    B --> D["Tahmini poz ve çizgi haritası"]
+    C --> E["Rakip hata modelleri"]
+    D --> E
+    E --> F["Düz / yay aday seçimi"]
+    D --> F
+    F --> G["Komut ve yeni ölçümler"]
+    G --> A
+```
 
-- EXP-42 yalnız EKF, dört LiDAR, iki ek ortam ve ön montaj hatasını kapsar.
+Geometrik aday puanı teşhis olasılığı veya formel bilgi kazancı değildir.
 
-- Bilinmeyen alanda çarpışmama veya gerçek robot güvenliği garantisi yoktur.
+| Konum | Sorumluluk |
+| :--- | :--- |
+| `simulator/` | Hareket, ortam ve sensör üretimi |
+| `perception/` | Çizgi çıkarımı ve veri eşleştirme |
+| `estimation/` | Kestirim, tutarlılık izleme, hata modelleri ve karar |
+| `experiments/` | Deney protokolleri ve çevrimdışı değerlendirme |
+| `dataset_loaders/` | Gerçek kayıt okuma |
+| `analytics/` | Tablo ve grafikler |
+| `visualization/` | Kayıttan gösterim |
+| `config/sensors/` | Sensör yerleşimleri ve ayarları |
 
-- Akademik yöntem yeniliği, ayrı sistematik literatür incelemesi gerektirir.
+</details>
 
-[Sınırlar](docs/LIMITATIONS.md) · [Yeniden üretilebilirlik](docs/REPRODUCIBILITY.md) · [Görsel kaynakları](docs/assets/README.md)
+[Mimari açıklaması](docs/ARCHITECTURE.md) · [Algoritmalar](docs/ALGORITHMS.md) · [Aktif teşhis](docs/ACTIVE_DIAGNOSIS.md)
+
+## Deney görselleri
+
+<details>
+<summary><strong>Ortamlar ve politika yörüngeleri · EXP-42</strong></summary>
+
+<p align="center">
+  <img src="docs/assets/heldout_environments.png" alt="Koridor ve asimetrik engelli ortamda politika yörüngeleri" width="560">
+</p>
+
+Koridor ve asimetrik engelli oda. Yörüngeler bir tohumun örneğidir; sayısal başarı sonuçları bütün 10 tohumdan gelir.
+
+</details>
+
+<details>
+<summary><strong>SLAM algoritmaları ve konum hatası · EXP-38</strong></summary>
+
+<p align="center">
+  <img src="docs/assets/algorithms_rmse.png" alt="EKF ve FastSLAM uyarlamaları için nominal kayıtlarda konum RMSE" width="620">
+</p>
+
+İncelenen nominal koşullarda EKF daha düşük RMSE verdi. FastSLAM 2.0 her koşulda FastSLAM 1.0'dan iyi çıkmadı. Parçacıklı yöntemlerin tekrarları parçacık tohumlarıdır; bağımsız sensör kayıtları değildir. Grafik genel algoritma sıralaması değildir.
+
+FastSLAM çekirdekleri çizgi özelliklerine uyarlamadır; özgün makalelerin birebir tekrarı veya ağaç tabanlı karmaşıklık avantajının doğrulaması değildir.
+
+</details>
+
+## Doğrulama ve sınırlar
+
+İncelenen proje kopyasında **319 test geçti**. EXP-42'de 480 çalışma ve gerekli süreler tamamlandı; eski çekirdekler ve dondurulmuş kalibrasyon korunmuştu. Bunlar kayıtlı doğrulama sonuçlarıdır; canlı CI durumu değildir.
+
+| Kapsam | Sınır |
+| :--- | :--- |
+| **Kaynak ayrımı** | Mevcut yöntem en az iki destekli LiDAR ister; tek LiDAR haritalama yapabilir. |
+| **GPS hareket seçimi** | Yalnız GPS hatası için öteleme hipotezli teşhis hareketi uygulanmamıştır. |
+| **FastSLAM alarmı** | İncelenen dört-LiDAR +5° örneğinde alarm oluşmamıştır. |
+| **EXP-42** | EKF, dört LiDAR, iki ek ortam ve ön montaj hatasıyla sınırlıdır. |
+| **Güvenlik ve yenilik** | Bilinmeyen alanda güvenlik garantisi veya literatürde ilk yöntem iddiası yoktur. |
+
+[Sınırlamalar](docs/LIMITATIONS.md) · [Yeniden üretilebilirlik](docs/REPRODUCIBILITY.md) · [Görsel kaynakları](docs/assets/README.md)
 
 ## Dokümantasyon
 
-**[Dokümantasyon rehberi →](docs/README.md)**
-
-[Proje tanımı](docs/PROJECT_OVERVIEW.md) · [Kurulum](docs/GETTING_STARTED.md) · [Sensörler](docs/SIMULATOR_AND_SENSORS.md) · [Deneyler](docs/EXPERIMENTS.md) · [Bulgular](docs/RESEARCH_FINDINGS.md)
+| Başlamak için | Teknik ayrıntılar | Deney ve sonuçlar |
+| :--- | :--- | :--- |
+| [Proje tanımı](docs/PROJECT_OVERVIEW.md) | [Sistem mimarisi](docs/ARCHITECTURE.md) | [Deney planı](docs/EXPERIMENTS.md) |
+| [Kurulum rehberi](docs/GETTING_STARTED.md) | [Algoritmalar](docs/ALGORITHMS.md) | [Araştırma bulguları](docs/RESEARCH_FINDINGS.md) |
+| [Tüm belgeler](docs/README.md) | [Sensörler ve simülatör](docs/SIMULATOR_AND_SENSORS.md) | [Ek ortam protokolü](docs/heldout_environments.md) |
 
 ---
+
+<p align="center">
+  <strong>Sudenaz Kobilay</strong><br>
+  <sub>Kocaeli Üniversitesi · Yazılım Mühendisliği</sub>
+</p>
