@@ -1,5 +1,7 @@
 # Kurulum ve ilk çalıştırma
 
+> Güncel mimari ve yeni ortak CLI için [0.2.0 düzenleme notlarına](ARCHITECTURE_REFACTOR.md) bakın. Aşağıdaki tarihsel açıklamalar önceki deney akışlarını da içerir.
+
 [Dokümantasyona dön](README.md)
 
 Komutları VS Code terminalinde proje kökünde çalıştırın. Kullanıcı geliştirme ortamı Windows PowerShell ve Python 3.13.3'tür. Mevcut `.venv` varsa yeniden oluşturmayın.

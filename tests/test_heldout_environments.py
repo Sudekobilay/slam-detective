@@ -4,12 +4,10 @@ import unittest
 
 from estimation.diagnostic_motion import CANDIDATES
 from estimation.scan_alignment_guard import ScanGuardConfig
-from experiments.exp_36_sensor_layouts import examples
-from experiments.exp_42_heldout_environments import (
-    ENVIRONMENTS, CALIBRATION_SEEDS, DEFAULT_SEEDS, PROTOCOL,
-    check_pairing, diagnosis_readout, outcome, paired_summary,
-    preflight_geometry, run_trial, summarize,
-)
+from configuration.layouts import examples
+from configuration.protocols import ENVIRONMENTS, CALIBRATION_SEEDS
+from experiments.exp_42_heldout_environments import DEFAULT_SEEDS, PROTOCOL, paired_summary, preflight_geometry, run_trial, summarize
+from evaluation.diagnosis import check_pairing, diagnosis_readout, outcome
 from simulator.environment import create_demo_environment
 from simulator.validation_environments import validation_environment
 

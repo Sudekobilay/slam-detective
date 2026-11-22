@@ -12,22 +12,14 @@ from time import perf_counter
 from estimation.fastslam1 import FastSLAM1Backend
 from estimation.fastslam2 import FastSLAM2Backend
 from estimation.slam_backend import LineSlamBackend
-from experiments.exp_24_motion_comparison import (
-    write_json,
-    write_jsonl,
-)
-from experiments.exp_36_sensor_layouts import (
-    examples,
-    make_recording,
-    replay_layout,
-)
-from experiments.line_slam_common import (
-    evaluate,
-    write_csv,
-)
+from storage.files import write_json, write_jsonl
+from configuration.layouts import examples
+from experiments.exp_36_sensor_layouts import make_recording, replay_layout
+from evaluation.trajectory import evaluate
+from storage.files import write_csv
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(
         description=__doc__
     )
@@ -36,7 +28,7 @@ def main():
         type=int,
         default=40,
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if args.particles < 2:
         parser.error(

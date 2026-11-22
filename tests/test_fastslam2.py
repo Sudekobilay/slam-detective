@@ -12,11 +12,8 @@ from estimation.fastslam2 import (
     conditioned_gaussian,
     state_difference,
 )
-from experiments.exp_36_sensor_layouts import (
-    examples,
-    make_recording,
-    replay_layout,
-)
+from configuration.layouts import examples
+from experiments.exp_36_sensor_layouts import make_recording, replay_layout
 from simulator.encoder import EncoderMeasurement
 from simulator.gps import GPSMeasurement
 from simulator.imu import GyroMeasurement

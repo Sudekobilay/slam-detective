@@ -8,10 +8,7 @@ from pathlib import Path
 from estimation.hypothesis_motion import (
     HypothesisMotionAgent,
 )
-from experiments.exp_24_motion_comparison import (
-    write_json,
-    write_jsonl,
-)
+from storage.files import write_json, write_jsonl
 from experiments.exp_28_policy_benchmark import POLICIES
 from experiments.exp_29_complete_window import (
     drive_trial,
@@ -20,11 +17,10 @@ from experiments.exp_29_complete_window import (
 from experiments.exp_30_scan_guard_audit import (
     calibrate_healthy,
 )
-from experiments.exp_31_guarded_motion_benchmark import (
-    check_pairing,
-    movement_metrics,
-)
-from experiments.line_slam_common import evaluate, write_csv
+from experiments.exp_31_guarded_motion_benchmark import check_pairing
+from evaluation.movement import movement_metrics
+from evaluation.trajectory import evaluate
+from storage.files import write_csv
 
 
 def make_agent(policy, normal, *, config):
@@ -79,7 +75,7 @@ def raw_window(history, trigger, end):
     }
 
 
-def main():
+def main(argv=None):
     root = Path(__file__).resolve().parents[1]
     stamp = datetime.now(timezone.utc).strftime(
         "%Y%m%dT%H%M%S%fZ"

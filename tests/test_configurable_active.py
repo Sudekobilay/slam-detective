@@ -10,10 +10,9 @@ from estimation.configurable_geometry import compare_layout_hypotheses, LayoutSc
 from estimation.raw_scan_hypotheses import compare_raw_hypotheses
 from estimation.scan_alignment_guard import ScanGuardConfig
 from experiments.exp_30_scan_guard_audit import fixed_recording
-from experiments.exp_36_sensor_layouts import examples, read_layout
-from experiments.exp_40_configurable_active import (
-    LayoutWorld, calibrate_layout, create_agent, run_layout,
-)
+from configuration.layouts import examples, read_layout
+from simulator.layout_world import LayoutWorld
+from application.layout_service import calibrate_layout, create_agent, run_layout
 from tests import test_raw_scan_hypotheses as raw_fixture
 
 

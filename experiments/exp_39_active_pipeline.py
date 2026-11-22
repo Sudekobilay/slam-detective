@@ -18,17 +18,12 @@ from estimation.scan_alignment_guard import (
     ScanGuardConfig,
     scan_alignment,
 )
-from experiments.exp_24_motion_comparison import (
-    write_json,
-    write_jsonl,
-)
+from storage.files import write_json, write_jsonl
 from experiments.exp_30_scan_guard_audit import (
     fixed_recording,
 )
-from experiments.line_slam_common import (
-    evaluate,
-    write_csv,
-)
+from evaluation.trajectory import evaluate
+from storage.files import write_csv
 from simulator.encoder import EncoderMeasurement
 from simulator.environment import create_demo_environment
 from simulator.imu import GyroMeasurement
@@ -362,7 +357,7 @@ def run_active(
     )
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(
         description=__doc__
     )
@@ -397,7 +392,7 @@ def main():
     parser.add_argument("--particles", type=int, default=40)
     parser.add_argument("--gps", action="store_true")
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if (
         not math.isfinite(args.yaw)

@@ -7,7 +7,8 @@ import unittest
 
 import numpy as np
 
-from experiments.exp_24_motion_comparison import generate_scenario, write_jsonl
+from experiments.exp_24_motion_comparison import generate_scenario
+from storage.files import write_jsonl
 from experiments.exp_25_frozen_reference import run_frozen_window
 
 

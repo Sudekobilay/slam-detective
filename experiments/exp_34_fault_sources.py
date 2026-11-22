@@ -12,14 +12,11 @@ from experiments.diagnosis_validation_common import (
     inspect_frozen,
     confirm_sequence,
 )
-from experiments.exp_24_motion_comparison import (
-    write_json,
-    write_jsonl,
-)
-from experiments.line_slam_common import write_csv
+from storage.files import write_json, write_jsonl
+from storage.files import write_csv
 
 
-def main():
+def main(argv=None):
     root = Path(__file__).resolve().parents[1]
     stamp = datetime.now(timezone.utc).strftime(
         "%Y%m%dT%H%M%S%fZ"

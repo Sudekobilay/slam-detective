@@ -1,4 +1,5 @@
 """Read EXP-43 results, retain failures, plot success and paired movement costs."""
+from storage.runs import validate_run
 import argparse
 from collections import defaultdict, Counter
 import csv
@@ -34,8 +35,8 @@ def group_rows(rows):
     return result
 
 
-def make_report(run):
-    run=Path(run).resolve();summary=json.loads((run/'summary.json').read_text())
+def make_report(run, *, allow_partial=False):
+    run=Path(run).resolve();summary=validate_run(run, experiment_id='exp_43', allow_partial=allow_partial)
     required=('all_pairings_passed','protected_sources_unchanged','calibration_unchanged')
     if summary.get('experiment_id')!='exp_43' or not all(summary.get(k) for k in required):
         raise ValueError('Validated EXP-43 run required.')
@@ -83,7 +84,7 @@ def make_report(run):
     fig.suptitle('Adaptif eksi karşılaştırıcı | Nokta: eş çift; elmas: ortalama; güven aralığı değil')
     fig.savefig(out/'paired_costs.png',dpi=160);plt.close(fig)
     lines=['# EXP-43 - Robustness ve hareket maliyeti','',f"{len(rows)} politika çalıştırması; {summary['paired_conditions']} eşleştirilmiş koşul.",
-           '',f"Kısa kontrol modu: {json.loads((run/'protocol.json').read_text())['smoke_only']}",
+           '',f"Kısa kontrol modu: {json.loads((run/'protocol.json').read_text(encoding='utf-8-sig'))['smoke_only']}",
            f"Gerekli süreler tamamlandı: {summary['all_horizons_completed']}",'',
            'Ayrıntılı ortam/başlangıç/rota/politika hücreleri stratified_summary.csv içindedir; pooled grafik hücre başına üç tohum sonucu gibi yorumlanmaz.', '', '## Bütün sonuçlar','', '| Gürültü | Politika | Hata (°) | n | Doğru | Belirsiz | Alarm yok | Erken | Yanlış kaynak | Yanlış alarm |',
            '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |']
@@ -105,8 +106,10 @@ def make_report(run):
     return out
 
 
-def main():
+def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--run',type=Path,required=True)
-    print('Report:',make_report(parser.parse_args().run))
+    parser.add_argument('--allow-partial', action='store_true')
+    args = parser.parse_args(argv)
+    print('Report:',make_report(args.run, allow_partial=args.allow_partial))
 
 if __name__=='__main__':main()

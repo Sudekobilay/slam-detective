@@ -3,12 +3,8 @@
 import copy
 import unittest
 
-from experiments.exp_36_sensor_layouts import (
-    examples,
-    read_layout,
-    make_recording,
-    replay_layout,
-)
+from configuration.layouts import examples, read_layout
+from experiments.exp_36_sensor_layouts import make_recording, replay_layout
 
 
 class TestSensorLayouts(unittest.TestCase):

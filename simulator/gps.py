@@ -1,79 +1,14 @@
 """Yerel 2B koordinatlarda GPS konum ölçümü."""
 
-from dataclasses import dataclass
+from domain.measurements import GPSConfig, GPSMeasurement
 import math
 import random
 
 from simulator.robot import Pose
 
 
-@dataclass(frozen=True)
-class GPSConfig:
-    noise_std_m: float = 0.0
-    bias_x_m: float = 0.0
-    bias_y_m: float = 0.0
-
-    # Kesinti aralığı [başlangıç, bitiş).
-    outage_start_s: float | None = None
-    outage_end_s: float | None = None
-
-    def __post_init__(self):
-        if not all(math.isfinite(value) for value in (
-            self.noise_std_m,
-            self.bias_x_m,
-            self.bias_y_m,
-        )):
-            raise ValueError("GPS parametreleri sonlu olmalıdır.")
-
-        if self.noise_std_m < 0.0:
-            raise ValueError("Standart sapma negatif olamaz.")
-
-        start = self.outage_start_s
-        end = self.outage_end_s
-
-        if (start is None) != (end is None):
-            raise ValueError(
-                "Kesinti başlangıcı ve bitişi birlikte verilmelidir."
-            )
-
-        if start is not None:
-            if not (
-                math.isfinite(start)
-                and math.isfinite(end)
-                and 0.0 <= start < end
-            ):
-                raise ValueError("Geçersiz GPS kesinti aralığı.")
 
 
-@dataclass(frozen=True)
-class GPSMeasurement:
-    time_s: float
-    available: bool
-    x_m: float | None
-    y_m: float | None
-    nominal_variance_m2: float
-
-    def __post_init__(self):
-        if not (
-            math.isfinite(self.time_s)
-            and self.time_s >= 0.0
-            and math.isfinite(self.nominal_variance_m2)
-            and self.nominal_variance_m2 >= 0.0
-        ):
-            raise ValueError("Geçersiz GPS zamanı veya varyansı.")
-
-        if self.available:
-            if (
-                self.x_m is None
-                or self.y_m is None
-                or not math.isfinite(self.x_m)
-                or not math.isfinite(self.y_m)
-            ):
-                raise ValueError("Geçerli konum ölçümü gerekli.")
-        elif self.x_m is not None or self.y_m is not None:
-            raise ValueError(
-                "Kesintide konum alanları None olmalıdır."
-            )
 
 
 class GPSSensor:

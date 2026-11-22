@@ -28,9 +28,7 @@ from estimation.hypothesis_motion import (
 from estimation.scan_alignment_guard import (
     ScanGuardConfig,
 )
-from experiments.exp_24_motion_comparison import (
-    write_json,
-)
+from storage.files import write_json
 from simulator.environment import (
     create_demo_environment,
 )
@@ -208,7 +206,7 @@ def choose_case(
     return candidates[0].parent.parent
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(
         description=__doc__
     )
@@ -233,7 +231,7 @@ def main():
         type=int,
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     summary = json.loads(
         (

@@ -5,13 +5,8 @@ import unittest
 
 from estimation.scan_alignment_guard import ScanGuardConfig
 from experiments.exp_29_complete_window import drive_trial
-from experiments.exp_31_guarded_motion_benchmark import (
-    POLICIES,
-    check_pairing,
-    make_guarded_agent,
-    movement_metrics,
-    summarize,
-)
+from experiments.exp_31_guarded_motion_benchmark import POLICIES, check_pairing, make_guarded_agent, summarize
+from evaluation.movement import movement_metrics
 
 
 class TestGuardedMotionBenchmark(unittest.TestCase):

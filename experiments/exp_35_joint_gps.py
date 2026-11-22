@@ -19,17 +19,12 @@ from estimation.scan_alignment_guard import (
 from experiments.diagnosis_validation_common import (
     fault_recording,
 )
-from experiments.exp_24_motion_comparison import (
-    write_json,
-    write_jsonl,
-)
+from storage.files import write_json, write_jsonl
 from experiments.exp_30_scan_guard_audit import (
     calibrate_healthy,
 )
-from experiments.line_slam_common import (
-    evaluate,
-    write_csv,
-)
+from evaluation.trajectory import evaluate
+from storage.files import write_csv
 from simulator.gps import GPSMeasurement
 
 
@@ -146,7 +141,7 @@ def replay_joint(events, config):
     )
 
 
-def main():
+def main(argv=None):
     root = Path(__file__).resolve().parents[1]
 
     stamp = datetime.now(timezone.utc).strftime(

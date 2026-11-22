@@ -20,11 +20,11 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 
-from experiments.exp_24_motion_comparison import (
-    BRANCH_TIME, MOTION_RATES, check_scenarios, generate_scenario,
-    write_json, write_jsonl,
-)
-from experiments.line_slam_common import replay, evaluate, snapshot, write_csv
+from experiments.exp_24_motion_comparison import BRANCH_TIME, MOTION_RATES, check_scenarios, generate_scenario
+from storage.files import write_json, write_jsonl
+from experiments.line_slam_common import replay, snapshot
+from evaluation.trajectory import evaluate
+from storage.files import write_csv
 from estimation.mounting_hypotheses import compare_mounting_hypotheses
 from perception.line_association import associate_lines, transform_line
 from perception.line_features import extract_lines

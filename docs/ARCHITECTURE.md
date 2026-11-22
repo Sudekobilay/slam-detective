@@ -1,5 +1,7 @@
 # Sistem mimarisi
 
+> Güncel mimari ve yeni ortak CLI için [0.2.0 düzenleme notlarına](ARCHITECTURE_REFACTOR.md) bakın. Aşağıdaki tarihsel açıklamalar önceki deney akışlarını da içerir.
+
 [Dokümantasyona dön](README.md)
 
 ## Tasarım ilkesi

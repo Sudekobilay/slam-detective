@@ -7,7 +7,7 @@ from analytics.summarize_results import (
     algorithm_rows, policy_rows, gps_rows, outcome_rows,
     resolve_sources, compact, mean, spread,
 )
-from experiments.exp_24_motion_comparison import write_json
+from storage.files import write_json
 
 
 class TestResultsSummary(unittest.TestCase):

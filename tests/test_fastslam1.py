@@ -11,11 +11,8 @@ from estimation.fastslam1 import (
     FastSLAM1Backend,
     log_gaussian,
 )
-from experiments.exp_36_sensor_layouts import (
-    examples,
-    make_recording,
-    replay_layout,
-)
+from configuration.layouts import examples
+from experiments.exp_36_sensor_layouts import make_recording, replay_layout
 from simulator.encoder import EncoderMeasurement
 from simulator.gps import GPSMeasurement
 from simulator.imu import GyroMeasurement

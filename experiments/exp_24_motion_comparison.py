@@ -5,6 +5,8 @@ verilir. Gerçek konum yalnız sonradan değerlendirme ve animasyonda kullanıl�
 Hareketler önceden belirlenir; bu dosya aktif hareket seçimi uygulamaz.
 """
 
+from storage.files import write_json, write_jsonl
+
 import argparse
 from collections import Counter
 from dataclasses import asdict
@@ -21,7 +23,9 @@ from matplotlib.animation import FuncAnimation, PillowWriter
 from matplotlib.collections import LineCollection
 from matplotlib.patches import Circle
 
-from experiments.line_slam_common import replay, evaluate, write_csv
+from experiments.line_slam_common import replay
+from evaluation.trajectory import evaluate
+from storage.files import write_csv
 from simulator.collision import try_step
 from simulator.encoder import EncoderConfig, WheelEncoder
 from simulator.environment import create_demo_environment
@@ -46,17 +50,8 @@ def normalize_json(value):
     return json.loads(json.dumps(value, allow_nan=False))
 
 
-def write_json(path, value):
-    path.write_text(
-        json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False),
-        encoding="utf-8",
-    )
 
 
-def write_jsonl(path, rows):
-    with path.open("w", encoding="utf-8") as handle:
-        for row in rows:
-            handle.write(json.dumps(row, ensure_ascii=False, allow_nan=False) + "\n")
 
 
 def wheel_rates(motion, interval_index):

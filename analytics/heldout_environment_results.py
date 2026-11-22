@@ -12,7 +12,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 
-from experiments.exp_42_heldout_environments import POLICIES, ENVIRONMENTS
+from configuration.protocols import POLICIES, ENVIRONMENTS
 from simulator.environment import Environment, Rectangle
 
 

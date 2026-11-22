@@ -3,6 +3,10 @@
 Mevcut çekirdekler değiştirilmez. Gerçek ortam ve hata etiketi sadece ölçüm
 üretimi/çevrimdışı değerlendirmededir. Yeni ortamlara eşik uyarlaması yoktur.
 """
+
+from application.calibration import calibrate_readout
+
+from evaluation.diagnosis import check_pairing, diagnosis_readout, outcome
 import argparse
 from collections import defaultdict
 from dataclasses import asdict
@@ -16,11 +20,13 @@ import statistics
 
 from estimation.diagnostic_motion import CANDIDATES
 from estimation.raw_scan_hypotheses import diagnose_raw
-from experiments.exp_24_motion_comparison import write_json, write_jsonl
-from experiments.exp_31_guarded_motion_benchmark import movement_metrics
-from experiments.exp_36_sensor_layouts import examples
-from experiments.exp_40_configurable_active import LayoutWorld, calibrate_layout, create_agent, run_layout
-from experiments.line_slam_common import evaluate, write_csv
+from storage.files import write_json, write_jsonl
+from evaluation.movement import movement_metrics
+from configuration.layouts import examples
+from simulator.layout_world import LayoutWorld
+from application.layout_service import calibrate_layout, create_agent, run_layout
+from evaluation.trajectory import evaluate
+from storage.files import write_csv
 from simulator.collision import try_step
 from simulator.robot import DifferentialDriveRobot, Pose
 from simulator.validation_environments import validation_environment
@@ -51,9 +57,8 @@ PROTOCOL = {
 
 class ValidationWorld(LayoutWorld):
     def __init__(self, environment, data, seed, yaw):
-        super().__init__(data,seed,'healthy' if yaw==0 else 'lidar','front',yaw)
+        super().__init__(data,seed,'healthy' if yaw==0 else 'lidar','front',yaw, environment=validation_environment(environment))
         self.environment_name = environment
-        self._environment = validation_environment(environment)
 
     def evaluation_records(self):
         result = super().evaluation_records()
@@ -82,112 +87,13 @@ def preflight_geometry():
     return checks
 
 
-def calibrate_readout(data):
-    """Yalnız özgün ortamın sağlıklı kayıtlarından alarm ve okuma eşikleri."""
-    config, alignment = calibrate_layout(data,'ekf',40)
-    improvements, gaps, rms = [],[],[]
-    for normal in CANDIDATES:
-        for seed in CALIBRATION_SEEDS:
-            agent,_,_,_,reason = run_layout(data,config,normal=normal,fault='healthy',seed=seed)
-            if reason is not None:
-                raise RuntimeError('Sağlıklı kalibrasyon tamamlanamadı.')
-            for frame in agent.raw_history:
-                if frame['status'] != 'evaluated':
-                    continue
-                best,runner = frame['models'][:2]
-                improvements.append(best['improvement_m2'])
-                gaps.append(runner['cost_m2']-best['cost_m2'])
-                rms.append(best['max_sensor_rms_m'])
-    if not rms:
-        raise RuntimeError('Hipotez okuma kalibrasyonu yetersiz.')
-    thresholds = {'minimum_improvement_m2':2*max(improvements)+1e-6,
-                  'minimum_model_gap_m2':2*max(gaps)+1e-6}
-    max_rms = max(rms)+.01
-    return config,thresholds,max_rms,{
-        'alignment':alignment, 'diagnosis_thresholds':thresholds,
-        'diagnosis_max_sensor_rms_m':max_rms, 'healthy_raw_frames':len(rms),
-        'calibration_environment':'original_demo_only',
-        'note':'Engineering margins derived only from healthy original-environment records; frozen before held-out trials.',
-    }
 
 
 def run_trial(environment,data,config,policy,normal,yaw,seed):
     world = ValidationWorld(environment,data,seed,yaw)
     agent = create_agent(data,config,'ekf',policy=policy,normal=normal,seed=seed+20000,use_gps=False)
-    events = world.initial_measurements()
-    agent.process(events)
-    deadline,commands,reason = 4.,[],None
-    while agent.time_s<deadline-1e-9:
-        rates = agent.command()
-        command = {'interval_start_s':agent.time_s,'left_rate_rad_s':rates[0],
-                   'right_rate_rad_s':rates[1],'mode':agent.mode,'applied':False,
-                   'changed_from_normal':rates!=agent.normal_command}
-        commands.append(command)
-        try:
-            batch = world.step(*rates)
-        except RuntimeError as error:
-            reason = str(error)
-            break
-        command['applied'] = True
-        agent.process(batch)
-        events.extend(batch)
-        deadline = max(4.,agent.window_end_s or 4.)
-    return agent,events,commands,world.evaluation_records(),reason
-
-
-def check_pairing(trials):
-    first = next(iter(trials.values()))
-    trigger = first[0].trigger_time_s
-    cutoff = trigger if trigger is not None else 4.
-    prefix = [e for e in first[1] if e['time_s']<=cutoff+1e-9]
-    truth = [r for r in first[3]['truth'] if r['time_s']<=cutoff+1e-9]
-    return {
-        'same_alarm':all(t[0].trigger_time_s==trigger for t in trials.values()),
-        'same_window':all(t[0].window_end_s==first[0].window_end_s for t in trials.values()),
-        'same_measurements_through_alarm':all([e for e in t[1] if e['time_s']<=cutoff+1e-9]==prefix for t in trials.values()),
-        'same_truth_through_alarm':all([r for r in t[3]['truth'] if r['time_s']<=cutoff+1e-9]==truth for t in trials.values()),
-    }
-
-
-def diagnosis_readout(history,trigger,end,thresholds,max_rms):
-    if trigger is None:
-        return {'confirmed_model':None,'confirmation_time_s':None,'window_frames':0,
-                'supported_frames':0,'mean_true_source_margin_m2':None}
-    frames = [r for r in history if trigger+1e-9<r['time_s']<=end+1e-9]
-    previous,count,confirmed,confirmation = None,0,None,None
-    margins=[]
-    for frame in frames:
-        decision = diagnose_raw(frame,thresholds,max_rms)
-        if frame['status']=='evaluated':
-            costs = {m['hypothesis']:m['cost_m2'] for m in frame['models']}
-            # True-source margin is an offline metric; never fed to the controller.
-            if 'front_yaw' in costs:
-                margins.append(min(v for k,v in costs.items() if k!='front_yaw')-costs['front_yaw'])
-        if decision['status']=='candidate':
-            identity = (decision['hypothesis'],1 if decision['offset_deg']>0 else -1)
-            count = count+1 if identity==previous else 1
-            previous = identity
-            if confirmed is None and count>=2:
-                confirmed,confirmation = identity[0],frame['time_s']
-        else:
-            count,previous = 0,None
-    return {'confirmed_model':confirmed,'confirmation_time_s':confirmation,
-            'window_frames':len(frames),'supported_frames':sum(r['status']=='evaluated' for r in frames),
-            'mean_true_source_margin_m2':statistics.mean(margins) if len(margins)==4 else None}
-
-
-def outcome(yaw,trigger,complete,model):
-    if yaw==0:
-        return 'healthy_no_alarm' if trigger is None else 'false_alarm'
-    if trigger is None:
-        return 'no_alarm'
-    if trigger<2.-1e-9:
-        return 'premature_alarm'
-    if not complete:
-        return 'incomplete_window'
-    if model is None:
-        return 'uncertain'
-    return 'correct_source' if model=='front_yaw' else 'wrong_source'
+    from application.runner import run_episode
+    return run_episode(world, agent).legacy()
 
 
 def summarize(rows):
@@ -237,11 +143,7 @@ def paired_summary(rows):
     return result
 
 
-def protected_hashes(root):
-    paths=[]
-    for name in ('simulator','estimation','perception','experiments'):
-        paths.extend(p for p in (root/name).glob('*.py') if p.name not in ('validation_environments.py',Path(__file__).name))
-    return {str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
+from storage.provenance import protected_hashes
 
 
 def main():

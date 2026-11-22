@@ -4,6 +4,7 @@ Temel haritalama içindir. İki sensörlü teşhis ve hareket
 seçimini kendiliğinden farklı sensör sayılarına genişletmez.
 """
 
+from domain.contracts import BackendCapabilities, GeometrySnapshot, ReferenceDistribution
 from estimation.line_ekf_slam import LineEKFSLAM
 from perception.line_association import (
     associate_lines,
@@ -16,10 +17,13 @@ from simulator.robot import Pose
 class LineSlamBackend:
     name = "line_ekf_slam"
 
-    def __init__(self, mounts):
+    capabilities = BackendCapabilities()
+
+    def __init__(self, mounts, *, initial_pose=None, initial_covariance=None, geometry=None):
         self.mounts = dict(mounts)
         self.estimator = LineEKFSLAM(
-            initial_pose=Pose(1.0, 3.0, 0.0)
+            initial_pose=initial_pose if initial_pose is not None else Pose(1.0, 3.0, 0.0),
+            initial_covariance=initial_covariance, geometry=geometry
         )
 
     def predict(self, encoder, gyro):
@@ -77,3 +81,14 @@ class LineSlamBackend:
             "y_m": float(pose.y),
             "theta_rad": float(pose.theta),
         }
+
+    @property
+    def clock_s(self):
+        return self.estimator.time_s
+
+    def geometry_snapshot(self):
+        return GeometrySnapshot(self.estimator.pose, self.estimator.geometry,
+                                tuple(self.estimator.map_features()))
+
+    def reference_distribution(self):
+        return ReferenceDistribution(self.estimator.state.copy(), self.estimator.P.copy(), self.clock_s)

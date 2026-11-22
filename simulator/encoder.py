@@ -1,50 +1,11 @@
 """Tekerlek dönüşlerinden tam sayı encoder ölçümleri üretir."""
 
-from dataclasses import dataclass
+from domain.measurements import EncoderConfig, EncoderMeasurement
 import math
 
 
-@dataclass(frozen=True)
-class EncoderConfig:
-    # Bir tam tekerlek dönüşündeki etkin sayım adedi.
-    # Ham PPR değil; varsa quadrature etkisi dahil kabul edilir.
-    counts_per_revolution: int = 2048
-
-    def __post_init__(self):
-        if (
-            type(self.counts_per_revolution) is not int
-            or self.counts_per_revolution <= 0
-        ):
-            raise ValueError(
-                "Bir turdaki sayım adedi pozitif tam sayı olmalıdır."
-            )
 
 
-@dataclass(frozen=True)
-class EncoderMeasurement:
-    """Bir zaman aralığında ölçülen darbe artışları."""
-
-    time_s: float
-    dt_s: float
-    left_delta_counts: int
-    right_delta_counts: int
-
-    def __post_init__(self):
-        if not (
-            math.isfinite(self.time_s)
-            and math.isfinite(self.dt_s)
-            and self.dt_s > 0.0
-            and self.time_s >= self.dt_s
-        ):
-            raise ValueError("Geçersiz encoder zaman bilgisi.")
-
-        if (
-            type(self.left_delta_counts) is not int
-            or type(self.right_delta_counts) is not int
-        ):
-            raise ValueError(
-                "Encoder sayımları tam sayı olmalıdır."
-            )
 
 
 class WheelEncoder:

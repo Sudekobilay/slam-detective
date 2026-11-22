@@ -22,9 +22,9 @@ from matplotlib.collections import LineCollection
 from estimation.active_pipeline import geometry_view
 from estimation.diagnostic_motion import CANDIDATES
 from estimation.scan_alignment_guard import ScanGuardConfig
-from experiments.exp_24_motion_comparison import write_json
-from experiments.exp_36_sensor_layouts import read_layout
-from experiments.exp_40_configurable_active import create_agent
+from storage.files import write_json
+from configuration.layouts import read_layout
+from application.layout_service import create_agent
 from simulator.environment import Environment, Rectangle
 from simulator.robot import Pose, wrap_angle
 
@@ -272,12 +272,12 @@ def render_demo(folder, output, *, fps=6, tolerance=1e-6):
     return output
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run', type=Path, required=True)
     parser.add_argument('--fps', type=int, default=6)
     parser.add_argument('--tolerance', type=float, default=1e-6)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     root = Path(__file__).resolve().parents[1]
     stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
     output = render_demo(args.run, root / 'results' / f'active_demo_{stamp}', fps=args.fps, tolerance=args.tolerance)

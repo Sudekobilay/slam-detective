@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "slam-detective"
+version = "0.2.0"
+description = "Reproducible multi-sensor SLAM and active diagnosis experiments"
+requires-python = ">=3.12"
+dependencies = ["numpy>=2,<3", "matplotlib>=3.8,<4", "Pillow>=10,<13"]
+
+[project.scripts]
+slam-detective = "application.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["application*", "configuration*", "config", "domain*", "evaluation*", "storage*", "simulator*", "perception*", "estimation*", "experiments*", "analytics*", "visualization*", "dataset_loaders*"]
+exclude = ["tests*", "results*"]
+namespaces = true
+
+[tool.setuptools.package-data]
+config = ["sensors/*.json", "benchmarks/*.json"]

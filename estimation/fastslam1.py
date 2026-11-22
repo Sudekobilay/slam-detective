@@ -9,6 +9,7 @@ karmaşıklık iddiası yoktur.
 """
 
 import copy
+from domain.contracts import BackendCapabilities, GeometrySnapshot, ReferenceDistribution
 from dataclasses import dataclass, replace
 import math
 
@@ -101,12 +102,14 @@ def log_gaussian(residual, covariance):
 
 class FastSLAM1Backend:
     name = "fastslam1_line"
+    capabilities = BackendCapabilities()
 
     def __init__(
         self,
         mounts,
         particle_count=40,
         seed=901,
+        *, initial_pose=None, initial_covariance=None, geometry=None,
     ):
         if (
             type(particle_count) is not int
@@ -117,13 +120,12 @@ class FastSLAM1Backend:
             )
 
         self.mounts = dict(mounts)
-        self.geometry = RobotGeometry()
+        self.geometry = geometry if geometry is not None else RobotGeometry()
         self.rng = np.random.default_rng(seed)
         self.count = particle_count
 
-        initial = np.array([
-            1.0, 3.0, 0.0, 0.0
-        ])
+        pose = initial_pose if initial_pose is not None else Pose(1., 3., 0.)
+        initial = np.array([pose.x, pose.y, pose.theta, 0.])
 
         # EKF'nin başlangıç kovaryansıyla
         # aynı nominal standart sapmalar.
@@ -131,14 +133,22 @@ class FastSLAM1Backend:
             0.001, 0.001, 0.005, 0.02
         ])
 
-        self.particles = [
-            Particle(
-                initial
-                + self.rng.normal(size=4) * std,
-                [],
-            )
-            for _ in range(particle_count)
-        ]
+        if initial_covariance is None:
+            transform = None
+        else:
+            covariance = np.asarray(initial_covariance, dtype=float)
+            if (covariance.shape != (4, 4) or not np.isfinite(covariance).all()
+                    or not np.allclose(covariance, covariance.T, atol=1e-10, rtol=0.)):
+                raise ValueError('Initial covariance must be finite symmetric 4x4.')
+            values, vectors = np.linalg.eigh(covariance)
+            if values.min() < -1e-10:
+                raise ValueError('Initial covariance must be positive semidefinite.')
+            transform = vectors @ np.diag(np.sqrt(np.maximum(values, 0.)))
+        self.particles = []
+        for _ in range(particle_count):
+            sample = self.rng.normal(size=4)
+            state = initial + (sample * std if transform is None else transform @ sample)
+            self.particles.append(Particle(state, []))
 
         self.log_weights = np.full(
             particle_count,
@@ -581,3 +591,22 @@ class FastSLAM1Backend:
             "y_m": pose.y,
             "theta_rad": pose.theta,
         }
+
+    @property
+    def clock_s(self):
+        return self.time_s
+
+    def geometry_snapshot(self):
+        # Map and pose must come from the same particle.
+        best = self.particles[int(np.argmax(self.weights))]
+        return GeometrySnapshot(Pose(*best.state[:3]), self.geometry,
+                                tuple(line.feature() for line in best.landmarks))
+
+    def reference_distribution(self):
+        states = np.asarray([particle.state for particle in self.particles])
+        weights, pose = self.weights, self.pose
+        mean = np.array([pose.x, pose.y, pose.theta, float(weights @ states[:, 3])])
+        delta = states - mean
+        delta[:, 2] = [wrap_angle(value) for value in delta[:, 2]]
+        covariance = delta.T @ (delta * weights[:, None]) + np.eye(4) * 1e-10
+        return ReferenceDistribution(mean, covariance, self.clock_s)

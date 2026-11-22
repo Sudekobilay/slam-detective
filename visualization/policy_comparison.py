@@ -1,4 +1,5 @@
 """Four saved EXP-43 policies at the same clock; no new simulation or selection."""
+from storage.runs import validate_run
 import argparse
 import csv
 import hashlib
@@ -12,7 +13,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation,PillowWriter
 from matplotlib.patches import Rectangle
 import numpy as np
-from experiments.exp_42_heldout_environments import diagnosis_readout
+from evaluation.diagnosis import diagnosis_readout
 
 POLICIES=('passive','fixed_straight','fixed_arc','adaptive')
 LABELS=('Pasif','Sabit düz','Sabit yay','Adaptif')
@@ -34,27 +35,28 @@ def frame_status(history,summary,time_s,calibration):
     return label,motion
 
 
-def main():
+def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run',type=Path,required=True)
     parser.add_argument('--environment',default='corridor');parser.add_argument('--start',default='nominal')
     parser.add_argument('--noise',default='ideal');parser.add_argument('--normal',default='arc')
     parser.add_argument('--seed',type=int);parser.add_argument('--yaw',type=float,default=5.)
     parser.add_argument('--fps',type=int,default=8)
-    args=parser.parse_args()
+    args=parser.parse_args(argv)
     if not 1<=args.fps<=20:parser.error('fps must be 1..20')
-    run=args.run.resolve();protocol=json.loads((run/'protocol.json').read_text())
+    validate_run(args.run, experiment_id='exp_43')
+    run=args.run.resolve();protocol=json.loads((run/'protocol.json').read_text(encoding='utf-8-sig'))
     seed=args.seed if args.seed is not None else protocol['seeds'][0]
     base=(run/args.environment/args.start/args.noise/args.normal/f'seed_{seed}'/f'yaw_{args.yaw:g}').resolve()
     if not base.is_relative_to(run):raise ValueError('Case must belong to run.')
-    calibration=json.loads((run/'calibration.json').read_text());geometry=protocol['environment_geometry'][args.environment]
+    calibration=json.loads((run/'calibration.json').read_text(encoding='utf-8-sig'));geometry=protocol['environment_geometry'][args.environment]
     trials=[];sources=[run/'protocol.json',run/'calibration.json']
     for policy in POLICIES:
         folder=base/policy
         files=[folder/n for n in ('ground_truth.csv','estimate.csv','summary.json','raw_hypotheses.jsonl')]
         sources.extend(files)
-        truth=read_csv(files[0]);estimate=read_csv(files[1]);summary=json.loads(files[2].read_text())
-        raw=[json.loads(l) for l in files[3].read_text().splitlines() if l.strip()]
+        truth=read_csv(files[0]);estimate=read_csv(files[1]);summary=json.loads(files[2].read_text(encoding='utf-8-sig'))
+        raw=[json.loads(l) for l in files[3].read_text(encoding='utf-8-sig').splitlines() if l.strip()]
         trials.append((truth,estimate,summary,raw))
     before={str(p.relative_to(run)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sources}
     max_time=max(float(t[0][-1]['time_s']) for t in trials)

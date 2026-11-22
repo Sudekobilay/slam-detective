@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from analytics.robustness_report import group_rows
-from experiments.exp_36_sensor_layouts import examples
+from configuration.layouts import examples
 from experiments.exp_43_robustness import RobustnessWorld, pose_of, preflight, read_config, path_cost, paired_rows
 from simulator.lidar_corruption import corrupt_lidar_event
 from visualization.policy_comparison import frame_status

@@ -39,10 +39,10 @@ class WorldConfig:
 class StreamingWorld:
     dt = 0.1
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, *, environment=None, initial_pose=None, geometry=None):
         self._config = config or WorldConfig()
-        self._environment = create_demo_environment()
-        self._robot = DifferentialDriveRobot(initial_pose=Pose(1., 3., 0.))
+        self._environment = environment if environment is not None else create_demo_environment()
+        self._robot = DifferentialDriveRobot(initial_pose=initial_pose if initial_pose is not None else Pose(1., 3., 0.), geometry=geometry)
         self._encoder = WheelEncoder(EncoderConfig())
         self._gyro = Gyroscope(GyroConfig(noise_std_rad_s=.01), seed=self._config.gyro_seed)
         self._gps = GPSSensor(GPSConfig(noise_std_m=.05, outage_start_s=1., outage_end_s=3.), seed=self._config.gps_seed)

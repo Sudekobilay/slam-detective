@@ -4,6 +4,8 @@ EXP-29'un eşit süre protokolü kullanılır. Gerçek konum ve hata etiketi yal
 simülasyon/değerlendirme katmanındadır. Hipotez farkı teşhis doğruluğu değildir.
 """
 
+from evaluation.movement import movement_metrics
+
 import argparse
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -14,7 +16,7 @@ from pathlib import Path
 from estimation.diagnostic_motion import CANDIDATES
 from estimation.online_diagnostic_agent import OnlineDiagnosticAgent
 from estimation.scan_alignment_guard import ScanAlignmentGuard
-from experiments.exp_24_motion_comparison import write_json, write_jsonl
+from storage.files import write_json, write_jsonl
 from experiments.exp_28_policy_benchmark import POLICIES
 from experiments.exp_29_complete_window import (
     BASE_HORIZON,
@@ -26,7 +28,8 @@ from experiments.exp_30_scan_guard_audit import (
     CALIBRATION_SEEDS,
     calibrate_healthy,
 )
-from experiments.line_slam_common import evaluate, write_csv
+from evaluation.trajectory import evaluate
+from storage.files import write_csv
 
 
 class GuardedFixedArcAgent(OnlineDiagnosticAgent):
@@ -109,70 +112,6 @@ def check_pairing(trials):
     }
 
 
-def movement_metrics(truth, commands, trigger, end):
-    """Çevrimdışı hareket maliyeti; alarm anı başlangıca dahildir."""
-    if trigger is None:
-        return {
-            key: None
-            for key in (
-                "diagnostic_distance_m",
-                "diagnostic_absolute_turn_rad",
-                "changed_command_duration_s",
-                "diagnostic_duration_s",
-            )
-        }
-
-    points = [
-        point
-        for point in truth
-        if trigger - 1e-9 <= point["time_s"] <= end + 1e-9
-    ]
-
-    distance = sum(
-        math.hypot(
-            second["x_m"] - first["x_m"],
-            second["y_m"] - first["y_m"],
-        )
-        for first, second in zip(points, points[1:])
-    )
-
-    turn = sum(
-        abs(
-            math.atan2(
-                math.sin(second["theta_rad"] - first["theta_rad"]),
-                math.cos(second["theta_rad"] - first["theta_rad"]),
-            )
-        )
-        for first, second in zip(points, points[1:])
-    )
-
-    duration = sum(
-        min(
-            commands[index + 1]["interval_start_s"]
-            if index + 1 < len(commands)
-            else truth[-1]["time_s"],
-            end,
-        ) - command["interval_start_s"]
-        for index, command in enumerate(commands)
-        if (
-            command["applied"]
-            and command["changed_from_normal"]
-            and trigger - 1e-9
-            <= command["interval_start_s"]
-            < end - 1e-9
-        )
-    )
-
-    return {
-        "diagnostic_distance_m": distance,
-        "diagnostic_absolute_turn_rad": turn,
-        "changed_command_duration_s": duration,
-        "diagnostic_duration_s": (
-            max(0.0, points[-1]["time_s"] - trigger)
-            if points
-            else 0.0
-        ),
-    }
 
 
 def mean_defined(rows, key):

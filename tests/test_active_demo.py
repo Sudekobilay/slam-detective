@@ -8,10 +8,11 @@ import tempfile
 import unittest
 
 from estimation.scan_alignment_guard import ScanGuardConfig
-from experiments.exp_24_motion_comparison import write_json, write_jsonl
-from experiments.exp_36_sensor_layouts import examples
-from experiments.exp_40_configurable_active import run_layout
-from experiments.line_slam_common import evaluate, write_csv
+from storage.files import write_json, write_jsonl
+from configuration.layouts import examples
+from application.layout_service import run_layout
+from evaluation.trajectory import evaluate
+from storage.files import write_csv
 from simulator.mounting import SensorMount
 from visualization.active_demo import collect_frames, display_decision, hashes, physical_scan
 

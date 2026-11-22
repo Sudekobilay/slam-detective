@@ -16,8 +16,8 @@ import matplotlib.pyplot as plt
 from dataset_loaders.carmen import CarmenLoader, laser_mount, relative_pose
 from estimation.active_pipeline import make_backend, geometry_view
 from estimation.recorded_odometry import predict_recorded_odometry
-from experiments.exp_24_motion_comparison import write_json
-from experiments.line_slam_common import write_csv
+from storage.files import write_json
+from storage.files import write_csv
 from simulator.robot import Pose, wrap_angle
 
 
@@ -117,7 +117,7 @@ def replay_recording(path, *, algorithm='ekf', max_scans=40, stride=3,
     }
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--input', type=Path, default=Path('data/raw/fr079.clf'))
     parser.add_argument('--download', action='store_true')
@@ -130,7 +130,7 @@ def main():
     parser.add_argument('--start-angle-deg', type=float, default=-90.)
     parser.add_argument('--angle-step-deg', type=float, default=.5)
     parser.add_argument('--max-range-m', type=float, default=80.)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.download:
         print('Gerçek kayıt indiriliyor...', flush=True)
         download_recording(args.input)

@@ -5,3 +5,6 @@ data/raw/
 results/
 *.zip
 .env
+*.egg-info/
+build/
+dist/
